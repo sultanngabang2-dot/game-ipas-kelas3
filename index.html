@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Edukasi IPAS Kelas 3 - SDIT Al-Fikri</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Nunito for child-friendly legible typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- jsPDF for PDF Certificate Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef9c3 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 3px solid #e2e8f0;
+            box-shadow: 0 12px 30px -5px rgba(15, 23, 42, 0.08), 0 6px 0 #cbd5e1;
+        }
+        .btn-3d {
+            transition: all 0.15s ease;
+            box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+        }
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 0 #cbd5e1;
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #94a3b8;
+        }
+        .option-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #94a3b8;
+        }
+        .option-selected {
+            border-color: #0284c7 !important;
+            background-color: #e0f2fe !important;
+            box-shadow: 0 4px 0 #0284c7 !important;
+        }
+        .option-correct {
+            border-color: #16a34a !important;
+            background-color: #dcfce7 !important;
+            box-shadow: 0 4px 0 #16a34a !important;
+        }
+        .option-wrong {
+            border-color: #dc2626 !important;
+            background-color: #fee2e2 !important;
+            box-shadow: 0 4px 0 #dc2626 !important;
+        }
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: floatSlow 3.5s ease-in-out infinite;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-12">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white/90 backdrop-blur-md border-b-2 border-emerald-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-seedling text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">SDIT Al-Fikri</span>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-800 leading-tight">Petualangan IPAS Kelas 3</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Sound Toggle -->
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Suara Efek">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-lg text-emerald-600"></i>
+                </button>
+                <!-- Restart / Home Button (Shown in game) -->
+                <button id="homeNavBtn" onclick="confirmReturnHome()" class="hidden px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-house"></i>
+                    <span class="hidden sm:inline">Menu Utama</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 pt-6">
+
+        <!-- ==================== 1. START SCREEN ==================== -->
+        <section id="startScreen" class="space-y-6">
+            <div class="game-card rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+                <!-- Decorative background blobs -->
+                <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-200/40 rounded-full blur-xl pointer-events-none"></div>
+                <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-emerald-200/40 rounded-full blur-xl pointer-events-none"></div>
+
+                <div class="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-sky-500 text-white shadow-lg mb-4 animate-float">
+                    <i class="fa-solid fa-graduation-cap text-5xl"></i>
+                </div>
+
+                <div class="inline-block bg-amber-100 text-amber-800 font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full mb-2 border border-amber-300">
+                    <i class="fa-solid fa-book-open mr-1"></i> Sumber: Buku Paket Erlangga Sprint IPAS Kelas III (Semester Ganjil)
+                </div>
+
+                <h2 class="text-2xl sm:text-4xl font-bold text-slate-800 mb-2">
+                    Kuis Interaktif & Latihan Ulangan IPAS
+                </h2>
+                <p class="text-slate-600 max-w-xl mx-auto text-sm sm:text-base mb-6">
+                    Halo Shalih & Shalihah <strong> Kelas 3 SDIT Al-Fikri</strong>! Yuk uji pemahamanmu tentang Pancaindra, Keluarga, Perkembangan Manusia, Siklus Hidup Hewan/Tumbuhan, dan Pelestarian Alam. Selesaikan soalnya dan raih <strong>Sertifikat PDF Resmi</strong>!
+                </p>
+
+                <!-- Student Identity Form -->
+                <div class="max-w-md mx-auto bg-slate-50 p-5 rounded-2xl border-2 border-slate-200 text-left space-y-4 mb-6">
+                    <div>
+                        <label for="studentNameInput" class="block text-sm font-extrabold text-slate-700 mb-1">
+                            <i class="fa-solid fa-user-graduate text-emerald-600 mr-1"></i> Nama Lengkap Siswa <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" id="studentNameInput" placeholder="Contoh: Ahmad Fatih Al-Fikri" 
+                            class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:border-emerald-500 focus:outline-none font-bold text-slate-800 bg-white text-base transition"
+                            oninput="clearNameError()">
+                        <p id="nameErrorMsg" class="hidden text-xs font-bold text-rose-600 mt-1.5">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> Mohon isi nama lengkapmu dulu ya untuk dicetak di sertifikat!
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="studentClassInput" class="block text-xs font-extrabold text-slate-600 mb-1">
+                                <i class="fa-solid fa-school text-sky-600 mr-1"></i> Kelas
+                            </label>
+                            <input type="text" id="studentClassInput" value="Kelas 3 SDIT Al-Fikri" 
+                                class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-300 focus:border-emerald-500 focus:outline-none font-bold text-slate-700 bg-white text-sm">
+                        </div>
+                        <div>
+                            <label for="feedbackModeSelect" class="block text-xs font-extrabold text-slate-600 mb-1">
+                                <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> Mode Pembahasan
+                            </label>
+                            <select id="feedbackModeSelect" class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-300 focus:border-emerald-500 focus:outline-none font-bold text-slate-700 bg-white text-sm">
+                                <option value="instant">Langsung + Di Akhir</option>
+                                <option value="end">Hanya Di Akhir Soal</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapter / Mode Selection -->
+                <div class="text-left max-w-2xl mx-auto">
+                    <h3 class="text-center font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">
+                        <i class="fa-solid fa-layer-group text-emerald-600 mr-1"></i> Pilih Paket Latihan Soal:
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <!-- Mode 1: All Questions -->
+                        <button onclick="startGame('ALL')" class="btn-3d group text-left p-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 transition flex items-center justify-between sm:col-span-2">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl shrink-0">
+                                    🏆
+                                </div>
+                                <div>
+                                    <span class="text-xs font-extrabold uppercase bg-amber-300 text-slate-900 px-2 py-0.5 rounded-md">Rekomendasi Utama</span>
+                                    <h4 class="text-lg font-bold mt-0.5">Semua Materi Lengkap (45 Soal)</h4>
+                                    <p class="text-xs text-emerald-50">Gabungan Bab 3, Bab 4, Soal HOTS & Latihan Akhir Semester Ganjil</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-circle-play text-2xl group-hover:translate-x-1 transition"></i>
+                        </button>
+
+                        <!-- Mode 2: Bab 3 -->
+                        <button onclick="startGame('BAB3')" class="btn-3d group text-left p-4 rounded-2xl bg-white border-2 border-sky-200 hover:border-sky-400 transition flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-xl shrink-0">
+                                    👨‍👩‍👧‍👦
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-extrabold text-sky-600 uppercase">Bab 3 + HOTS (17 Soal)</span>
+                                    <h4 class="font-bold text-slate-800 text-sm sm:text-base">Perkembangan Manusia & Masyarakat</h4>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-sky-500"></i>
+                        </button>
+
+                        <!-- Mode 3: Bab 4 -->
+                        <button onclick="startGame('BAB4')" class="btn-3d group text-left p-4 rounded-2xl bg-white border-2 border-amber-200 hover:border-amber-400 transition flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0">
+                                    🦋
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-extrabold text-amber-600 uppercase">Bab 4 (15 Soal)</span>
+                                    <h4 class="font-bold text-slate-800 text-sm sm:text-base">Siklus Hidup & Perubahan Alam</h4>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-amber-500"></i>
+                        </button>
+
+                        <!-- Mode 4: Akhir Semester -->
+                        <button onclick="startGame('SEMESTER')" class="btn-3d group text-left p-4 rounded-2xl bg-white border-2 border-purple-200 hover:border-purple-400 transition flex items-center justify-between sm:col-span-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0">
+                                    📝
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-extrabold text-purple-600 uppercase">Latihan Akhir Semester Ganjil (13 Soal)</span>
+                                    <h4 class="font-bold text-slate-800 text-sm sm:text-base">Pancaindra, Tradisi Keluarga, Siklus Hidup & Pelestarian Ekosistem</h4>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-purple-500"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 2. QUIZ GAMEPLAY SCREEN ==================== -->
+        <section id="quizScreen" class="hidden space-y-5">
+            <!-- Student & Progress Bar Header -->
+            <div class="game-card rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-user-astronaut"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-500">Peserta Kuis:</div>
+                        <div id="activeStudentName" class="font-extrabold text-slate-800 text-sm sm:text-base">Nama Siswa</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 justify-between sm:justify-end">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-500">Soal</div>
+                        <div class="font-extrabold text-slate-800"><span id="currentQIndex">1</span> / <span id="totalQCount">45</span></div>
+                    </div>
+                    <div class="h-8 w-0.5 bg-slate-200"></div>
+                    <div class="bg-amber-100 border border-amber-300 px-3.5 py-1.5 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-star text-amber-500"></i>
+                        <span class="text-xs font-bold text-amber-900">Terjawab: <strong id="answeredCountDisplay">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-200 h-3.5 rounded-full overflow-hidden p-0.5 shadow-inner">
+                <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-sky-500 h-full rounded-full transition-all duration-300" style="width: 2%"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="game-card rounded-3xl p-5 sm:p-7 space-y-5">
+                <!-- Category & Question Type Badges -->
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span id="qCategoryBadge" class="text-xs font-extrabold uppercase tracking-wide px-3 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+                        Bab 3
+                    </span>
+                    <span id="qSourceBadge" class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        <i class="fa-solid fa-book mr-1"></i> Erlangga Sprint Hal. 61
+                    </span>
+                </div>
+
+                <!-- Optional Visual Illustration Box (For textbook image questions) -->
+                <div id="qVisualBox" class="hidden rounded-2xl bg-gradient-to-br from-sky-50 via-emerald-50 to-amber-50 border-2 border-dashed border-sky-200 p-4 text-center">
+                    <div id="qVisualEmoji" class="text-5xl sm:text-6xl mb-2">👶</div>
+                    <div id="qVisualCaption" class="text-xs sm:text-sm font-bold text-slate-700 bg-white/80 inline-block px-3 py-1 rounded-full shadow-sm">
+                        Ilustrasi Buku
+                    </div>
+                </div>
+
+                <!-- Story / Context Box (if question has reading passage) -->
+                <div id="qStoryBox" class="hidden bg-amber-50/90 border-l-4 border-amber-400 p-4 rounded-r-2xl text-slate-700 text-sm sm:text-base leading-relaxed italic">
+                </div>
+
+                <!-- Question Prompt -->
+                <h3 id="qText" class="text-lg sm:text-xl font-bold text-slate-800 leading-snug">
+                    Pertanyaan akan tampil di sini...
+                </h3>
+
+                <!-- Options Container -->
+                <div id="optionsContainer" class="space-y-3 pt-1">
+                    <!-- Dynamically populated options -->
+                </div>
+
+                <!-- Instant Explanation Box (Shown in Instant Mode after selecting) -->
+                <div id="instantFeedbackBox" class="hidden rounded-2xl p-4 border-2 transition-all">
+                    <div class="flex items-start gap-3">
+                        <div id="instantFeedbackIcon" class="text-2xl shrink-0 mt-0.5">✅</div>
+                        <div class="text-sm space-y-1">
+                            <div id="instantFeedbackTitle" class="font-extrabold text-base">Jawaban Tepat!</div>
+                            <div id="instantFeedbackCorrectAns" class="font-bold text-slate-800"></div>
+                            <p id="instantFeedbackExp" class="text-slate-600 leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="pt-4 border-t border-slate-200 flex items-center justify-between gap-3">
+                    <button id="prevBtn" onclick="prevQuestion()" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> Sebelumnya
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        <button id="nextBtn" onclick="nextQuestion()" class="btn-3d px-6 py-3 rounded-xl font-bold text-white bg-sky-600 hover:bg-sky-700 transition flex items-center gap-2">
+                            Selanjutnya <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button id="finishBtn" onclick="finishQuiz()" class="hidden btn-3d px-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-flag-checkered"></i> Selesai & Lihat Nilai
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Question Number Navigator -->
+            <div class="game-card rounded-2xl p-4">
+                <div class="text-xs font-extrabold uppercase text-slate-500 mb-2.5 flex items-center justify-between">
+                    <span><i class="fa-solid fa-table-cells mr-1"></i> Navigasi Nomor Soal</span>
+                    <span class="text-[11px] font-semibold">Klik nomor untuk berpindah</span>
+                </div>
+                <div id="questionGridNav" class="flex flex-wrap gap-1.5">
+                    <!-- Number buttons -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 3. RESULT, EVALUATION & CERTIFICATE SCREEN ==================== -->
+        <section id="resultScreen" class="hidden space-y-6">
+            <!-- Score & Certificate Card -->
+            <div class="game-card rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+                <div id="resultMedalEmoji" class="text-6xl sm:text-7xl mb-3 animate-float">🏅</div>
+                <span id="resultPredicateBadge" class="inline-block px-4 py-1 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 mb-2">
+                    Predikat: Sangat Baik
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-800">
+                    Alhamdulillah, Latihan Selesai!
+                </h2>
+                <p class="text-slate-600 text-sm sm:text-base mt-1">
+                    Selamat kepada <strong id="resultStudentName" class="text-emerald-700">Nama Siswa</strong> (<span id="resultStudentClass">Kelas 3</span>)
+                </p>
+
+                <!-- Score Stats Grid -->
+                <div class="grid grid-cols-3 gap-3 max-w-lg mx-auto my-6">
+                    <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-3 sm:p-4">
+                        <div class="text-xs font-bold text-sky-700 uppercase">Nilai Akhir</div>
+                        <div id="finalScoreValue" class="text-3xl sm:text-4xl font-extrabold text-sky-600 mt-1">100</div>
+                    </div>
+                    <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 sm:p-4">
+                        <div class="text-xs font-bold text-emerald-700 uppercase">Jawaban Benar</div>
+                        <div id="finalCorrectCount" class="text-3xl sm:text-4xl font-extrabold text-emerald-600 mt-1">0</div>
+                    </div>
+                    <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-3 sm:p-4">
+                        <div class="text-xs font-bold text-rose-700 uppercase">Kurang Tepat</div>
+                        <div id="finalWrongCount" class="text-3xl sm:text-4xl font-extrabold text-rose-600 mt-1">0</div>
+                    </div>
+                </div>
+
+                <!-- Visual Certificate Preview Canvas -->
+                <div class="max-w-2xl mx-auto my-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-extrabold uppercase text-slate-500">
+                            <i class="fa-solid fa-certificate text-amber-500 mr-1"></i> Pratinjau Sertifikat Kelulusan:
+                        </span>
+                        <span class="text-xs text-emerald-700 font-bold">Siap Diunduh (PDF)</span>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-lg border-4 border-amber-300 bg-white">
+                        <canvas id="certificateCanvas" width="1200" height="848" class="w-full h-auto block"></canvas>
+                    </div>
+                </div>
+
+                <!-- Action Buttons: Download PDF & Play Again -->
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
+                    <button onclick="downloadCertificatePDF()" class="btn-3d w-full sm:w-auto px-7 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg">
+                        <i class="fa-solid fa-file-pdf text-2xl"></i>
+                        Unduh Sertifikat (PDF)
+                    </button>
+                    <button onclick="returnToHome()" class="btn-3d w-full sm:w-auto px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        Ulangi / Pilih Bab Lain
+                    </button>
+                </div>
+            </div>
+
+            <!-- Complete Kunci Jawaban & Pembahasan Section -->
+            <div class="game-card rounded-3xl p-5 sm:p-7 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-slate-100 pb-4">
+                    <div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-book-open-reader text-emerald-600"></i>
+                            Evaluasi, Kunci Jawaban & Pembahasan Lengkap
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-500">
+                            Pelajari kembali jawaban yang benar di bawah ini sesuai materi Buku Erlangga Sprint IPAS Kelas 3.
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="filterReview('ALL')" id="filterAllBtn" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-white">Semua</button>
+                        <button onclick="filterReview('WRONG')" id="filterWrongBtn" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-rose-100 text-rose-700 hover:bg-rose-200">Perlu Dipelajari</button>
+                        <button onclick="filterReview('CORRECT')" id="filterCorrectBtn" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-700 hover:bg-emerald-200">Sudah Benar</button>
+                    </div>
+                </div>
+
+                <div id="reviewListContainer" class="space-y-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Confirmation Modal (No alert/confirm) -->
+    <div id="customModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border-2 border-slate-200 space-y-4">
+            <div id="modalIcon" class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mx-auto">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 id="modalTitle" class="text-xl font-bold text-slate-800">Konfirmasi</h3>
+            <p id="modalMessage" class="text-sm text-slate-600 leading-relaxed"></p>
+            <div class="flex items-center justify-center gap-3 pt-2">
+                <button id="modalCancelBtn" onclick="closeModal()" class="px-5 py-2.5 rounded-xl font-bold bg-slate-100 hover:bg-slate-200 text-slate-700">
+                    Batal
+                </button>
+                <button id="modalConfirmBtn" class="btn-3d px-5 py-2.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        /* ==========================================================================
+           COMPLETE QUESTION BANK FROM ATTACHED ERLANGGA SPRINT IPAS GRADE 3 PAGES
+           ========================================================================== */
+        const QUESTION_BANK = [
+            // ---------------- BAB 3: PERKEMBANGAN MANUSIA & KEHIDUPAN BERMASYARAKAT (Hal. 61-64) ----------------
+            {
+                id: 1,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 61 - Pilihan Ganda No. 1',
+                visual: { emoji: '👶🚶‍♂️🗣️', caption: 'Gambar 3.12: Anak Balita sedang belajar berjalan & berbicara' },
+                question: 'Perhatikan ilustrasi gambar balita di atas. Pada tahap balita tersebut, manusia mulai belajar untuk ....',
+                options: [
+                    'A. mengenali suara dan wajah saja seperti bayi baru lahir',
+                    'B. berbicara, berjalan, dan berinteraksi dengan orang lain',
+                    'C. memiliki tanggung jawab untuk bekerja dan berkeluarga'
+                ],
+                correctIndex: 1,
+                explanation: 'Pada tahap balita (bawah lima tahun), manusia mengalami perkembangan pesat seperti mulai belajar berjalan sendiri, berbicara, dan berinteraksi dengan orang-orang di sekitarnya.'
+            },
+            {
+                id: 2,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 61 - Pilihan Ganda No. 2',
+                question: 'Salah satu perubahan yang dialami manusia pada tahap remaja adalah ....',
+                options: [
+                    'A. mulai dapat berjalan dan berbicara',
+                    'B. kulit mulai keriput dan rambut beruban',
+                    'C. mengalami perubahan fisik dan emosional secara drastis'
+                ],
+                correctIndex: 2,
+                explanation: 'Masa remaja (pubertas) merupakan masa peralihan dari anak-anak menuju dewasa yang ditandai dengan perubahan fisik serta emosional secara drastis.'
+            },
+            {
+                id: 3,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 61 - Pilihan Ganda No. 3',
+                question: 'Nilai luhur yang diterapkan di dalam keluarga bertujuan untuk ....',
+                options: [
+                    'A. membentuk karakter yang baik dan menjaga keharmonisan keluarga',
+                    'B. menjadikan anak-anak lebih patuh tanpa perlu berpendapat',
+                    'C. membantu anak-anak meraih kesuksesan akademik semata'
+                ],
+                correctIndex: 0,
+                explanation: 'Nilai luhur dalam keluarga (seperti kejujuran, sopan santun, kasih sayang) bertujuan membentuk karakter anak yang baik serta menjaga keharmonisan keluarga.'
+            },
+            {
+                id: 4,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 61 - Pilihan Ganda No. 4',
+                question: 'Salah satu contoh pelaksanaan norma yang baik di dalam keluarga adalah ....',
+                options: [
+                    'A. mengutamakan kepentingan diri sendiri dibandingkan keluarga',
+                    'B. membantu pekerjaan rumah tangga sesuai kemampuan',
+                    'C. tidak berbicara kepada anggota keluarga lain'
+                ],
+                correctIndex: 1,
+                explanation: 'Membantu pekerjaan rumah tangga sesuai kemampuan merupakan contoh perilaku mematuhi norma dan aturan baik di lingkungan keluarga.'
+            },
+            {
+                id: 5,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 61 - Pilihan Ganda No. 5',
+                visual: { emoji: '🧹🏡🤝', caption: 'Ilustrasi Buku: Warga masyarakat sedang bergotong royong kerja bakti membersihkan jalan' },
+                question: 'Hal yang sebaiknya kita lakukan ketika melihat kegiatan kerja bakti di lingkungan sekitar seperti pada gambar adalah ....',
+                options: [
+                    'A. mengajak teman untuk bermain kejar-kejaran di jalanan',
+                    'B. ikut membantu kerja bakti sesuai dengan kemampuan kita',
+                    'C. menonton kegiatan kerja bakti sambil makan camilan'
+                ],
+                correctIndex: 1,
+                explanation: 'Sebagai warga yang baik, kita sebaiknya ikut berpartisipasi dalam kerja bakti sesuai kemampuan kita untuk menjaga kebersihan dan kerukunan.'
+            },
+            {
+                id: 6,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 61-62 - Pilihan Ganda No. 6',
+                question: 'Sikap yang harus dimiliki oleh setiap anggota keluarga dalam berkomunikasi adalah ....',
+                options: [
+                    'A. berbicara dengan sopan dan mendengarkan pendapat orang lain',
+                    'B. menyampaikan pendapat dengan suara keras agar didengarkan',
+                    'C. hanya mendengarkan orang tua tanpa boleh memberikan pendapat'
+                ],
+                correctIndex: 0,
+                explanation: 'Komunikasi yang baik dalam keluarga dilakukan dengan bahasa yang sopan, lembut, serta saling menghargai dan mendengarkan pendapat anggota keluarga lainnya.'
+            },
+            {
+                id: 7,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 62 - Pilihan Ganda No. 7',
+                question: 'Hal yang perlu dilakukan untuk menyelesaikan konflik atau perbedaan pendapat di dalam keluarga adalah ....',
+                options: [
+                    'A. berbicara dengan tenang dan mencari solusi dengan adil',
+                    'B. menyerahkan penyelesaian konflik sepenuhnya kepada orang tua',
+                    'C. menghindari pembicaraan agar konflik mereda dengan sendirinya'
+                ],
+                correctIndex: 0,
+                explanation: 'Konflik dalam keluarga harus diselesaikan melalui musyawarah, berbicara dengan kepala dingin (tenang), dan mencari jalan keluar yang adil.'
+            },
+            {
+                id: 8,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 62 - Pilihan Ganda No. 8',
+                question: 'Nilai gotong royong di dalam keluarga dapat dipraktikkan dengan cara ....',
+                options: [
+                    'A. menghindari tanggung jawab dengan alasan sibuk bermain',
+                    'B. membantu orang tua untuk membersihkan rumah dan memasak bersama ibu',
+                    'C. menunggu orang lain untuk menyelesaikan tugasnya terlebih dahulu'
+                ],
+                correctIndex: 1,
+                explanation: 'Membantu orang tua membersihkan rumah dan memasak bersama membuat pekerjaan rumah lebih cepat selesai dan mempererat kebersamaan.'
+            },
+            {
+                id: 9,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 62 - Pilihan Ganda No. 9',
+                question: 'Berikut ini yang BUKAN termasuk tugas seorang anak di rumah adalah ....',
+                options: [
+                    'A. membantu orang tua mengerjakan pekerjaan rumah ringan',
+                    'B. belajar dengan giat dan mengerjakan tugas sekolah dengan baik',
+                    'C. ikut bekerja mencari nafkah utama untuk keluarga'
+                ],
+                correctIndex: 2,
+                explanation: 'Mencari nafkah adalah tugas dan tanggung jawab orang tua (ayah/ibu), sedangkan tugas utama anak adalah belajar dengan giat dan membantu pekerjaan ringan.'
+            },
+            {
+                id: 10,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 62 - Pilihan Ganda No. 10',
+                visual: { emoji: '👨‍💼💻📄', caption: 'Ilustrasi Buku: Ayah sedang bekerja menggunakan laptop dan memeriksa dokumen' },
+                question: 'Peran dan tugas ayah berdasarkan gambar di atas adalah ....',
+                options: [
+                    'A. bekerja dan mencari nafkah untuk memenuhi kebutuhan keluarga',
+                    'B. melindungi keluarga dari ancaman bahaya luar',
+                    'C. melakukan pekerjaan membersihkan halaman rumah'
+                ],
+                correctIndex: 0,
+                explanation: 'Gambar menunjukkan seorang ayah yang sedang giat bekerja untuk mencari nafkah demi mencukupi kebutuhan hidup keluarganya.'
+            },
+            {
+                id: 11,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 62 - Isian Bagian B No. 1',
+                question: 'Tahapan perkembangan hidup manusia dimulai dari bayi, balita, lalu berkembang menjadi ...., remaja, dewasa, dan lansia.',
+                options: [
+                    'A. anak-anak',
+                    'B. manula',
+                    'C. orang tua'
+                ],
+                correctIndex: 0,
+                explanation: 'Urutan tahapan pertumbuhan dan perkembangan manusia yang benar adalah: Bayi -> Balita -> Anak-anak -> Remaja -> Dewasa -> Lansia (Lanjut Usia).'
+            },
+            {
+                id: 12,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 62-63 - Isian Bagian B No. 2 & 3',
+                question: 'Norma di dalam keluarga dan masyarakat dibuat dengan tujuan untuk menciptakan suasana yang ....',
+                options: [
+                    'A. ramai, bebas, dan tanpa aturan',
+                    'B. damai, rukun, harmonis, dan tertib',
+                    'C. tegang dan saling bersaing'
+                ],
+                correctIndex: 1,
+                explanation: 'Norma dalam keluarga dan masyarakat bertujuan menciptakan keharmonisan, kerukunan, kedamaian, dan ketertiban bersama.'
+            },
+            {
+                id: 13,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 63 - Isian Bagian B No. 4',
+                question: 'Nina menyapa seorang tetangga di depan rumahnya yang sedang menyapu halaman. Interaksi sosial yang dilakukan Nina dengan tetangganya tersebut merupakan contoh interaksi antara ....',
+                options: [
+                    'A. individu dengan individu',
+                    'B. individu dengan kelompok',
+                    'C. kelompok dengan kelompok'
+                ],
+                correctIndex: 0,
+                explanation: 'Karena Nina (1 orang/individu) menyapa tetangganya (1 orang/individu), maka interaksi tersebut adalah interaksi sosial antara individu dengan individu.'
+            },
+            {
+                id: 14,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Perkembangan Manusia & Masyarakat',
+                source: 'Erlangga Sprint Hal. 63 - Uraian Bagian C No. 1, 2, 3, 4, 5',
+                visual: { emoji: '👨‍👩‍👧🍳🥗', caption: 'Ilustrasi Buku Hal. 63: Pria dewasa bekerja & Keluarga bekerja sama memasak di dapur' },
+                question: 'Berdasarkan soal uraian Bab 3 (Hal. 63), manakah pernyataan di bawah ini yang BENAR mengenai masa dewasa serta manfaat kerja sama di rumah dan masyarakat?',
+                options: [
+                    'A. Pada masa dewasa manusia mampu memikul tanggung jawab (bekerja & berkeluarga), dan kerja sama membuat pekerjaan rumah lebih cepat selesai serta lingkungan bersih.',
+                    'B. Pada masa dewasa manusia masih bergantung penuh pada orang tua, dan pekerjaan rumah sebaiknya dikerjakan ibu sendirian.',
+                    'C. Aturan di masyarakat hanya berlaku untuk orang dewasa, sedangkan anak-anak bebas membuang sampah di selokan.'
+                ],
+                correctIndex: 0,
+                explanation: 'Ciri masa dewasa adalah mandiri dan mampu memikul tanggung jawab (bekerja/membina keluarga). Kerja sama di rumah (menyapu, mengepel) dan masyarakat (kerja bakti membersihkan selokan/rumput) membuat pekerjaan cepat selesai dan lingkungan bersih.'
+            },
+            {
+                id: 15,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Soal HOTS (Higher Order Thinking Skills)',
+                source: 'Erlangga Sprint Hal. 64 - Soal HOTS No. 1',
+                story: 'Dina belajar nilai kejujuran dan kerja keras di keluarganya. Suatu hari, ia melihat temannya berbohong kepada orang tua untuk menghindari hukuman.',
+                question: 'Berdasarkan cerita di atas, apa yang harus Dina lakukan kepada temannya dan apa akibat jika seorang anak berbohong kepada orang tuanya?',
+                options: [
+                    'A. Ikut menutupi kebohongan temannya agar temannya tidak dimarahi orang tuanya.',
+                    'B. Menasihati/memberi tahu temannya dengan baik agar jujur dan tidak mengulanginya lagi, karena berbohong adalah perbuatan dosa dan menghilangkan kepercayaan orang tua.',
+                    'C. Memarahi temannya dengan kasar di depan banyak orang.'
+                ],
+                correctIndex: 1,
+                explanation: 'Sesuai Soal HOTS No. 1: Dina harus menasihati temannya agar berkata jujur dan tidak mengulangi kebohongan. Berbohong kepada orang tua akan mendapat dosa dan membuat orang tua kehilangan kepercayaan.'
+            },
+            {
+                id: 16,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Soal HOTS (Higher Order Thinking Skills)',
+                source: 'Erlangga Sprint Hal. 64 - Soal HOTS No. 2',
+                story: 'Faris punya aturan jam belajar dan tidur. Namun, ia sering bermain gim hingga larut malam. Akibatnya, ia susah bangun pagi dan tidak fokus belajar.',
+                question: 'Menurutmu, mengapa mematuhi aturan jam tidur dan jam belajar itu sangat penting bagi anak sekolah?',
+                options: [
+                    'A. Agar tubuh mendapat istirahat yang cukup, tidak bangun kesiangan, kesehatan terjaga, dan tetap fokus saat belajar di kelas.',
+                    'B. Agar bisa bermain gim lebih lama lagi pada siang dan sore hari tanpa perlu belajar.',
+                    'C. Karena aturan hanya dibuat untuk menyenangkan hati guru di sekolah.'
+                ],
+                correctIndex: 0,
+                explanation: 'Sesuai Soal HOTS No. 2: Aturan jam tidur dan belajar penting agar kita tidak tidur larut malam, tidak bangun kesiangan, tubuh sehat, dan pikiran fokus saat belajar.'
+            },
+            {
+                id: 17,
+                group: 'BAB3',
+                categoryName: 'Bab 3: Soal HOTS (Higher Order Thinking Skills)',
+                source: 'Erlangga Sprint Hal. 64 - Soal HOTS No. 3',
+                story: 'Keluarga Toni memiliki kebiasaan makan malam bersama. Mereka saling bercerita sehingga makin dekat satu sama lain. Namun, Toni melihat kakaknya sibuk dengan ponselnya saat makan.',
+                question: 'Jika kamu menjadi Toni, apa tindakan yang sebaiknya kamu lakukan kepada kakakmu?',
+                options: [
+                    'A. Merebut ponsel kakak secara paksa dan menyembunyikannya.',
+                    'B. Memberi tahu atau mengingatkan kakak dengan sopan, baik, dan lembut (tidak kasar/membentak) agar menyimpan ponsel saat makan bersama.',
+                    'C. Ikut mengambil ponsel dan bermain gim bersama kakak di meja makan.'
+                ],
+                correctIndex: 1,
+                explanation: 'Sesuai Soal HOTS No. 3: Kita harus mengingatkan kakak dengan bahasa yang baik, sopan, dan lembut (jangan kasar atau membentak) untuk menghormati waktu kebersamaan keluarga.'
+            },
+
+            // ---------------- BAB 4: SIKLUS HIDUP MAKHLUK HIDUP & PERUBAHAN ALAM ----------------
+            {
+                id: 18,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 1',
+                question: 'Hewan di bawah ini yang mengalami metamorfosis tidak sempurna adalah ....',
+                options: [
+                    'A. kupu-kupu',
+                    'B. jangkrik',
+                    'C. nyamuk'
+                ],
+                correctIndex: 1,
+                explanation: 'Jangkrik (serta kecoak dan belalang) mengalami metamorfosis tidak sempurna karena hanya melalui 3 tahap (Telur -> Nimfa -> Imago/Dewasa) tanpa tahap kepompong (pupa).'
+            },
+            {
+                id: 19,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 2',
+                question: 'Tahapan siklus hidup kupu-kupu tepat setelah telur menetas adalah ....',
+                options: [
+                    'A. ulat (larva)',
+                    'B. kepompong (pupa)',
+                    'C. kupu-kupu dewasa (imago)'
+                ],
+                correctIndex: 0,
+                explanation: 'Urutan siklus hidup kupu-kupu adalah: Telur -> Ulat (Larva) -> Kepompong (Pupa) -> Kupu-kupu dewasa. Jadi setelah telur adalah ulat.'
+            },
+            {
+                id: 20,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 3',
+                question: 'Peristiwa pergantian siang dan malam di Bumi terjadi akibat ....',
+                options: [
+                    'A. Bumi diam tidak bergerak',
+                    'B. perputaran Bumi pada porosnya (rotasi Bumi)',
+                    'C. perubahan musim hujan ke kemarau'
+                ],
+                correctIndex: 1,
+                explanation: 'Pergantian siang dan malam terjadi karena Bumi berputar pada porosnya (disebut rotasi Bumi). Bagian Bumi yang menghadap Matahari mengalami siang, dan yang membelakangi mengalami malam.'
+            },
+            {
+                id: 21,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 4',
+                visual: { emoji: '🦎🏝️🌿', caption: 'Ilustrasi Buku: Hewan langka Komodo di habitat alaminya (Taman Nasional Komodo)' },
+                question: 'Perhatikan gambar komodo di atas. Salah satu upaya pelestarian hewan langka tersebut adalah ....',
+                options: [
+                    'A. memburu komodo untuk dijadikan hewan peliharaan di rumah',
+                    'B. memberi makan komodo secara bebas dengan makanan manusia',
+                    'C. menjaga kelestarian habitat aslinya'
+                ],
+                correctIndex: 2,
+                explanation: 'Upaya terbaik melestarikan komodo adalah menjaga habitat aslinya (pelestarian in-situ seperti di Taman Nasional Komodo) dan melarang perburuan liar.'
+            },
+            {
+                id: 22,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 5',
+                question: 'Negara Indonesia terletak di garis khatulistiwa sehingga memiliki dua musim, yaitu musim ....',
+                options: [
+                    'A. semi dan panas',
+                    'B. panas dan salju',
+                    'C. hujan dan kemarau'
+                ],
+                correctIndex: 2,
+                explanation: 'Indonesia beriklim tropis sehingga memiliki 2 musim utama, yaitu musim hujan dan musim kemarau.'
+            },
+            {
+                id: 23,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 6',
+                question: 'Hewan yang melakukan migrasi (perpindahan tempat) ketika musim dingin tiba biasanya bertujuan untuk ....',
+                options: [
+                    'A. mencari makanan dan lingkungan yang lebih hangat',
+                    'B. melakukan hibernasi di dalam tanah',
+                    'C. beristirahat selamanya dari cuaca ekstrem'
+                ],
+                correctIndex: 0,
+                explanation: 'Banyak burung dan hewan bermigrasi saat musim dingin menuju tempat yang lebih hangat agar tetap mendapatkan sumber makanan dan bertahan hidup.'
+            },
+            {
+                id: 24,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 7',
+                question: 'Faktor utama yang memengaruhi pertumbuhan tanaman dalam siklus hidupnya adalah ....',
+                options: [
+                    'A. sinar matahari, air, dan nutrisi (unsur hara)',
+                    'B. suhu tubuh tanaman',
+                    'C. jumlah cabang pada pohon'
+                ],
+                correctIndex: 0,
+                explanation: 'Tanaman membutuhkan sinar matahari (untuk fotosintesis), air, dan nutrisi dari tanah agar dapat tumbuh subur dalam siklus hidupnya.'
+            },
+            {
+                id: 25,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 8',
+                question: 'Manusia tidak mengalami metamorfosis dalam siklus hidupnya karena ....',
+                options: [
+                    'A. manusia tidak berkembang biak',
+                    'B. manusia tidak mengalami siklus hidup',
+                    'C. manusia tidak mengalami perubahan bentuk tubuh yang drastis pada pertumbuhannya'
+                ],
+                correctIndex: 2,
+                explanation: 'Metamorfosis adalah perubahan bentuk tubuh secara drastis (seperti ulat menjadi kupu-kupu). Manusia tumbuh besar tanpa perubahan bentuk tubuh yang drastis.'
+            },
+            {
+                id: 26,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 9',
+                question: 'Berikut ini yang termasuk hewan yang aktif mencari makan pada malam hari (hewan nokturnal) adalah ....',
+                options: [
+                    'A. rusa',
+                    'B. ayam',
+                    'C. kelelawar'
+                ],
+                correctIndex: 2,
+                explanation: 'Kelelawar (serta burung hantu) adalah hewan nokturnal yang tidur di siang hari dan aktif mencari makan pada malam hari.'
+            },
+            {
+                id: 27,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - PG No. 10',
+                question: 'Beberapa hewan (seperti beruang kutub atau landak) melakukan tidur panjang di musim dingin yang disebut hibernasi untuk ....',
+                options: [
+                    'A. menghemat energi di lingkungan yang dingin dan minim makanan',
+                    'B. menghindari serangan manusia di hutan',
+                    'C. menunggu datangnya musim dingin berikutnya'
+                ],
+                correctIndex: 0,
+                explanation: 'Hibernasi dilakukan hewan pada musim dingin untuk menghemat energi tubuh ketika suhu sangat dingin dan makanan sulit ditemukan.'
+            },
+            {
+                id: 28,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - Isian B No. 1',
+                question: 'Perubahan bentuk tubuh yang drastis pada tahapan siklus hidup hewan disebut ....',
+                options: [
+                    'A. metamorfosis',
+                    'B. fotosintesis',
+                    'C. adaptasi'
+                ],
+                correctIndex: 0,
+                explanation: 'Metamorfosis adalah proses perubahan bentuk tubuh secara bertahap dan drastis pada siklus hidup hewan (contohnya pada kupu-kupu dan katak).'
+            },
+            {
+                id: 29,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - Isian B No. 2',
+                visual: { emoji: '🥭🌳🌱', caption: 'Ilustrasi Buku: Buah mangga yang bergelantungan di pohon' },
+                question: 'Perhatikan gambar buah mangga di atas. Tumbuhan mangga tersebut berkembang biak secara alami dengan ....',
+                options: [
+                    'A. biji',
+                    'B. tunas daun',
+                    'C. spora'
+                ],
+                correctIndex: 0,
+                explanation: 'Pohon mangga merupakan tumbuhan berbunga dan berbuah yang berkembang biak menggunakan biji di dalam buahnya.'
+            },
+            {
+                id: 30,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - Isian B No. 3',
+                visual: { emoji: '🥚🐛繭🦋', caption: 'Ilustrasi Buku: Kupu-kupu indah di atas bunga (4 Tahap Siklus Hidup)' },
+                question: 'Hewan kupu-kupu seperti pada gambar mengalami empat tahap dalam siklus hidupnya (telur - ulat - kepompong - dewasa), yaitu disebut ....',
+                options: [
+                    'A. metamorfosis sempurna',
+                    'B. metamorfosis tidak sempurna',
+                    'C. siklus tanpa metamorfosis'
+                ],
+                correctIndex: 0,
+                explanation: 'Karena mengalami 4 tahapan (termasuk fase kepompong/pupa) dan bentuk ulat sangat berbeda dengan kupu-kupu dewasa, maka disebut metamorfosis sempurna.'
+            },
+            {
+                id: 31,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - Isian B No. 4',
+                question: 'Proses tumbuhan hijau menghasilkan makanan sendiri dengan bantuan cahaya matahari, air, dan karbon dioksida disebut ....',
+                options: [
+                    'A. fotosintesis',
+                    'B. perkecambahan',
+                    'C. penyerbukan'
+                ],
+                correctIndex: 0,
+                explanation: 'Fotosintesis adalah proses pembuatan makanan pada tumbuhan hijau yang berlangsung di daun dengan bantuan cahaya matahari.'
+            },
+            {
+                id: 32,
+                group: 'BAB4',
+                categoryName: 'Bab 4: Siklus Hidup & Perubahan Alam',
+                source: 'Erlangga Sprint Latihan Akhir Bab 4 - Isian B No. 5',
+                question: 'Di Desa Sukamaju, penduduk bekerja sama membersihkan sungai agar ikan dapat hidup dengan sehat. Kegiatan ini merupakan salah satu bentuk .... makhluk hidup.',
+                options: [
+                    'A. pelestarian (menjaga kelestarian)',
+                    'B. perburuan liar',
+                    'C. pencemaran ekosistem'
+                ],
+                correctIndex: 0,
+                explanation: 'Membersihkan sungai agar ekosistem air tetap bersih dan ikan hidup sehat adalah bentuk nyata upaya pelestarian makhluk hidup dan lingkungan.'
+            },
+
+            // ---------------- LATIHAN SOAL AKHIR SEMESTER GANJIL (Hal. 95-98) ----------------
+            {
+                id: 33,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 95 - Soal No. 1',
+                question: 'Fungsi mata sebagai salah satu alat pancaindra manusia adalah untuk mengenali ....',
+                options: [
+                    'A. rasa manis, asin, dan asam pada makanan',
+                    'B. getaran suara dan mengirimkannya ke otak',
+                    'C. bentuk, warna, dan memperkirakan jarak benda'
+                ],
+                correctIndex: 2,
+                explanation: 'Mata adalah indra penglihatan yang berfungsi mengenali bentuk benda, warna, ukuran, serta membantu kita memperkirakan jarak.'
+            },
+            {
+                id: 34,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 95 - Soal No. 2',
+                story: 'Perhatikan daftar anggota keluarga berikut:\n(1) Ayah\n(2) Kakak\n(3) Adik\n(4) Paman',
+                question: 'Anggota keluarga yang termasuk ke dalam "Keluarga Inti" ditunjukkan oleh nomor ....',
+                options: [
+                    'A. (1), (2), dan (3)',
+                    'B. (2) dan (4)',
+                    'C. (3) dan (4)'
+                ],
+                correctIndex: 0,
+                explanation: 'Keluarga inti terdiri atas Ayah, Ibu, dan Anak (Kakak/Adik). Sedangkan Paman, Bibi, Kakek, Nenek, dan Sepupu termasuk Keluarga Besar.'
+            },
+            {
+                id: 35,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 95 - Soal No. 3',
+                question: 'Rani melihat sebuah pohon silsilah keluarga yang menunjukkan nama kakek, nenek, ayah, paman, dan dirinya sendiri. Pohon silolah tersebut membantu Rani memahami ....',
+                options: [
+                    'A. jadwal kegiatan harian anggota keluarga',
+                    'B. cita-cita keluarganya di masa depan',
+                    'C. hubungan kekerabatan dan asal-usul keluarganya'
+                ],
+                correctIndex: 2,
+                explanation: 'Pohon silsilah keluarga berguna untuk menggambarkan hubungan kekerabatan dan sejarah asal-usul dalam sebuah keluarga.'
+            },
+            {
+                id: 36,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 95 - Soal No. 4',
+                question: 'Haikal sedang mengalami banyak perubahan dalam tubuh dan perasaannya. Ia mulai belajar bertanggung jawab dan berinteraksi dengan lebih banyak orang. Tahapan pertumbuhan yang dialami Haikal yaitu ....',
+                options: [
+                    'A. bayi',
+                    'B. remaja',
+                    'C. dewasa'
+                ],
+                correctIndex: 1,
+                explanation: 'Perubahan tubuh dan perasaan serta mulai belajar bertanggung jawab menuju kemandirian adalah ciri tahapan pertumbuhan masa remaja.'
+            },
+            {
+                id: 37,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 96 - Soal No. 5',
+                story: 'Perhatikan kegiatan-kegiatan berikut:\n(1) Anak-anak menghormati orang tua.\n(2) Orang tua memberi bimbingan dengan kasih sayang.\n(3) Adik memberi perintah dengan paksa kepada kakak.\n(4) Anggota keluarga saling membantu satu sama lain.',
+                question: 'Sikap yang menunjukkan hidup rukun dalam keluarga ditunjukkan oleh nomor ....',
+                options: [
+                    'A. (1), (2), dan (3)',
+                    'B. (1), (2), dan (4)',
+                    'C. (1), (3), dan (4)'
+                ],
+                correctIndex: 1,
+                explanation: 'Hidup rukun ditunjukkan oleh sikap saling menghormati (1), membimbing dengan kasih sayang (2), dan saling membantu (4).'
+            },
+            {
+                id: 38,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 96 - Tabel Benar/Salah Pancaindra No. 6',
+                story: 'Perhatikan 5 pernyataan tentang Pancaindra dari tabel buku halaman 96 berikut:\n(a) Mata membantu mengenali warna, bentuk, dan ukuran benda.\n(b) Getaran suara ditangkap oleh telinga dan dikirim ke lidah.\n(c) Lidah dapat merasakan rasa pahit, asam, dan manis.\n(d) Kulit hanya dapat merasakan panas dan tidak dapat merasakan nyeri.\n(e) Hidung mengenali bau dengan bantuan reseptor penciuman di dalam rongganya.',
+                question: 'Manakah kelompok pernyataan yang bernilai BENAR sesuai tabel pancaindra di atas?',
+                options: [
+                    'A. Pernyataan (a), (c), dan (e) BENAR; sedangkan (b) dan (d) SALAH.',
+                    'B. Pernyataan (a), (b), dan (d) BENAR; sedangkan (c) dan (e) SALAH.',
+                    'C. Semua pernyataan (a, b, c, d, e) adalah BENAR.'
+                ],
+                correctIndex: 0,
+                explanation: 'Kunci Tabel No. 6: (a) Benar, (b) Salah [getaran suara dikirim telinga ke otak, bukan lidah], (c) Benar, (d) Salah [kulit bisa merasakan panas, dingin, kasar, halus, dan nyeri], (e) Benar.'
+            },
+            {
+                id: 39,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 96 - Menjodohkan Kemampuan Hewan No. 7',
+                visual: { emoji: '🦇🐘🦈', caption: 'Soal Menjodohkan Hal. 96: Kelelawar, Gajah, dan Hiu' },
+                question: 'Pasangan yang TEPAT antara hewan dan kemampuan indra khususnya berdasarkan soal halaman 96 nomor 7 adalah ....',
+                options: [
+                    'A. Kelelawar (ekolokasi & menangkap suara ultrasonik), Gajah (merasakan getaran pada tanah lewat telapak kaki), Hiu (penciuman sangat tajam mendeteksi aroma darah dari jauh).',
+                    'B. Kelelawar (mendeteksi darah di air), Gajah (terbang dengan ultrasonik), Hiu (merasakan getaran tanah dengan kaki).',
+                    'C. Kelelawar, Gajah, dan Hiu semuanya menggunakan telapak kaki untuk merasakan getaran di tanah.'
+                ],
+                correctIndex: 0,
+                explanation: 'Sesuai garis hubung Hal. 96 No. 7: Kelelawar memiliki ekolokasi/menangkap suara ultrasonik sebagai alat navigasi; Gajah merasakan getaran tanah menggunakan telapak kaki; Hiu memiliki penciuman sangat tajam untuk mendeteksi aroma darah dari jarak jauh.'
+            },
+            {
+                id: 40,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 97 - Soal No. 8 & Tabel Benar/Salah No. 9',
+                story: 'Soal No. 8 (Peran Keluarga Besar) & No. 9 (Tradisi Keluarga):\n- Pernyataan 9a: Setiap keluarga pasti memiliki tradisi yang sama persis.\n- Pernyataan 9b: Gotong royong merupakan salah satu bentuk kearifan lokal.\n- Pernyataan 9c: Menceritakan kisah keluarga dari generasi ke generasi adalah bagian dari sejarah keluarga.',
+                question: 'Berdasarkan soal halaman 97 nomor 8 dan 9, manakah jawaban yang paling TEPAT?',
+                options: [
+                    'A. Peran keluarga besar contohnya sepupu menjadi teman bermain/sahabat; serta pada tabel No. 9: (a) SALAH, (b) BENAR, dan (c) BENAR.',
+                    'B. Ayah dan Ibu adalah keluarga tambahan; serta pada tabel No. 9: (a) BENAR, (b) SALAH, dan (c) SALAH.',
+                    'C. Setiap keluarga di dunia wajib memiliki tradisi yang sama persis.'
+                ],
+                correctIndex: 0,
+                explanation: 'Pada No. 8: Sepupu adalah bagian keluarga besar yang berperan menjadi teman bermain dan sahabat (sedangkan Ayah & Ibu adalah keluarga inti). Pada Tabel No. 9: (a) Salah karena tiap keluarga punya tradisi beragam, (b) Benar, (c) Benar.'
+            },
+            {
+                id: 41,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 97 - Soal No. 10 & No. 11',
+                question: 'Manakah pasangan pernyataan yang BENAR mengenai ciri orang dewasa (Soal No. 10) dan ciri hewan metamorfosis sempurna (Soal No. 11)?',
+                options: [
+                    'A. Orang dewasa sudah dapat menikah dan mencari nafkah; sedangkan hewan metamorfosis sempurna melalui tahap pupa (kepompong) dan mengalami perubahan bentuk drastis.',
+                    'B. Orang dewasa baru mulai belajar merangkak; sedangkan metamorfosis sempurna hanya memiliki 2 tahap pertumbuhan.',
+                    'C. Orang dewasa tidak memiliki tanggung jawab; dan hewan metamorfosis sempurna tidak mengalami perubahan bentuk.'
+                ],
+                correctIndex: 0,
+                explanation: 'Kunci Hal. 97 No. 10: Ciri orang dewasa adalah sudah menikah dan mencari nafkah. No. 11: Ciri hewan metamorfosis sempurna adalah melalui tahap pupa DAN mengalami perubahan bentuk drastis (4 tahap).'
+            },
+            {
+                id: 42,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 97 - Isian No. 12, 13, dan 14',
+                story: 'Perhatikan 3 kalimat rumpang di buku halaman 97 berikut:\n(12) Kupu-kupu yang indah berasal dari ulat. Perubahan bentuk ini disebut [....]\n(13) Proses pertumbuhan biji menjadi kecambah terjadi pada tahap [....]\n(14) Pada musim hujan, banyak petani mulai menanam padi di sawah. Hal ini menunjukkan bahwa [....]',
+                question: 'Isian yang tepat untuk melengkapi nomor (12), (13), dan (14) secara berurutan adalah ....',
+                options: [
+                    'A. (12) Metamorfosis; (13) Perkecambahan; (14) Perubahan musim/cuaca memengaruhi kegiatan manusia dan pertumbuhan tanaman.',
+                    'B. (12) Fotosintesis; (13) Penyerbukan; (14) Petani tidak membutuhkan air untuk menanam padi.',
+                    'C. (12) Hibernasi; (13) Dewasa; (14) Padi hanya bisa tumbuh di musim kemarau kering.'
+                ],
+                correctIndex: 0,
+                explanation: 'Kunci Hal. 97: (12) Metamorfosis (sempurna), (13) Tahap perkecambahan, (14) Musim/cuaca di alam sangat memengaruhi aktivitas manusia (petani bercocok tanam) karena padi membutuhkan banyak air.'
+            },
+            {
+                id: 43,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 98 - Uraian Cerita No. 15',
+                story: 'Setiap pagi, Raka bermain gim di ponselnya sambil tiduran. Ia bermain cukup lama, bahkan terkadang tidak memperhatikan waktu makan atau istirahat. Setelah beberapa hari, matanya terasa perih dan sering berair. Raka menjadi sulit fokus saat belajar di kelas.',
+                question: 'Berdasarkan cerita tersebut, manakah TIGA cara yang tepat yang harus dilakukan Raka untuk merawat kesehatan matanya?',
+                options: [
+                    'A. (1) Membatasi waktu bermain ponsel/gim, (2) Tidak menggunakan ponsel sambil tiduran & menjaga jarak pandang, (3) Mengistirahatkan mata serta makan makanan bergizi (vitamin A).',
+                    'B. (1) Menambah kecerahan layar ponsel maksimal di tempat gelap, (2) Bermain ponsel semakin dekat dengan mata, (3) Mengucek mata dengan tangan kotor.',
+                    'C. (1) Tidak perlu makan sayur, (2) Tidur larut malam sambil menonton televisi, (3) Membaca buku sambil tiduran di kamar redup.'
+                ],
+                correctIndex: 0,
+                explanation: 'Kunci Hal. 98 No. 15: Cara merawat mata adalah membatasi waktu menatap layar gawai, duduk dengan posisi tegak & jarak cukup (tidak sambil tiduran), mengistirahatkan mata, dan mengonsumsi sayur/buah kaya vitamin A.'
+            },
+            {
+                id: 44,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 98 - Uraian Cerita No. 16, 17, dan 18',
+                story: 'Setiap hari Minggu, keluarga Rizka berkumpul di rumah nenek. Mereka menggunakan pakaian adat dan menikmati makanan khas daerah mereka bersama-sama. Setelah makan, nenek biasanya menceritakan kisah tentang masa kecilnya dan tradisi keluarga yang dulu sering dilakukan.',
+                question: 'Berdasarkan cerita keluarga Rizka (No. 16) serta soal No. 17 & 18, apa manfaat kegiatan tersebut dan bagaimana cara kita melestarikan budaya serta menjalankan kewajiban di rumah?',
+                options: [
+                    'A. Manfaatnya mempererat kerukunan keluarga & mengenal tradisi/sejarah keluarga; cara melestarikannya dengan bangga memakai produk/budaya daerah serta rajin menjalankan kewajiban di rumah agar suasana tertib dan harmonis.',
+                    'B. Manfaatnya agar mendapat uang saku saja; dan kita tidak perlu lagi mempelajari budaya daerah di zaman modern.',
+                    'C. Kewajiban di rumah hanya perlu dilakukan jika ada nenek yang berkunjung ke rumah.'
+                ],
+                correctIndex: 0,
+                explanation: 'Kunci Hal. 98 No. 16-18: Berkumpul bersama nenek mempererat kasih sayang/kerukunan dan menjaga kelestarian budaya/sejarah keluarga. Anak Indonesia dapat melestarikan budaya dengan mempelajari tarian/makanan/bahasa daerah, serta wajib menjalankan tugas di rumah agar keluarga rukun.'
+            },
+            {
+                id: 45,
+                group: 'SEMESTER',
+                categoryName: 'Latihan Akhir Semester Ganjil',
+                source: 'Erlangga Sprint Hal. 98 - Uraian No. 19 & No. 20',
+                visual: { emoji: '🦧🐯🦚🌳', caption: 'Pelestarian Hewan & Tumbuhan Langka (Penangkaran & Ekosistem)' },
+                question: 'Berdasarkan soal nomor 19 dan 20 (Hal. 98), mengapa hewan dan tumbuhan perlu dilestarikan serta mengapa penangkaran hewan dapat memulihkan ekosistem yang rusak?',
+                options: [
+                    'A. Agar hewan dan tumbuhan tidak punah dan keseimbangan alam terjaga; penangkaran membantu mengembangbiakkan hewan langka (seperti Orang Utan, Harimau Sumatra, Komodo, Jalak Bali) dengan aman untuk dilepasliarkan kembali.',
+                    'B. Agar hewan langka bisa dijual bebas ke luar negeri dengan harga mahal.',
+                    'C. Penangkaran dibuat untuk mengubah hewan liar menjadi mainan anak-anak di rumah.'
+                ],
+                correctIndex: 0,
+                explanation: 'Kunci Hal. 98 No. 19-20: Hewan dan tumbuhan wajib dilestarikan agar tidak punah dan rantai makanan/ekosistem tetap seimbang. Contoh langkah di sekitar kita: merawat tanaman, tidak menyakiti hewan, membuang sampah pada tempatnya. Penangkaran melindungi hewan langka agar berkembang biak dengan aman.'
+            }
+        ];
+
+        /* ==========================================================================
+           STATE MANAGEMENT & WEB AUDIO API SOUND EFFECTS
+           ========================================================================== */
+        let studentName = '';
+        let studentClass = 'Kelas 3 SDIT Al-Fikri';
+        let feedbackMode = 'instant'; // 'instant' or 'end'
+        let selectedMode = 'ALL';
+        let activeQuestions = [];
+        let currentQuestionIdx = 0;
+        let userAnswers = {}; // { questionIdx: selectedOptionIndex }
+        let soundEnabled = true;
+        let currentReviewFilter = 'ALL';
+
+        // Synthesized Sound Effects using Web Audio API (100% offline/online safe)
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioCtx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const now = audioCtx.currentTime;
+                if (type === 'click') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(680, now + 0.06);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                } else if (type === 'correct') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.07);
+                        gain.gain.setValueAtTime(0.18, now + i * 0.07);
+                        gain.gain.exponentialRampToValueAtTime(0.008, now + i * 0.07 + 0.22);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.07);
+                        osc.stop(now + i * 0.07 + 0.22);
+                    });
+                } else if (type === 'wrong') {
+                    const notes = [300, 240];
+                    notes.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                        gain.gain.setValueAtTime(0.12, now + i * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.008, now + i * 0.12 + 0.2);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.12);
+                        osc.stop(now + i * 0.12 + 0.2);
+                    });
+                } else if (type === 'fanfare') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                    const times = [0, 0.12, 0.24, 0.36, 0.52, 0.68];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + times[idx]);
+                        gain.gain.setValueAtTime(0.22, now + times[idx]);
+                        gain.gain.exponentialRampToValueAtTime(0.008, now + times[idx] + 0.35);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + times[idx]);
+                        osc.stop(now + times[idx] + 0.35);
+                    });
+                }
+            } catch (e) {
+                // Ignore audio error if blocked by browser policy
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-lg text-emerald-600';
+                playSound('click');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-lg text-slate-400';
+            }
+        }
+
+        function clearNameError() {
+            document.getElementById('nameErrorMsg').classList.add('hidden');
+            document.getElementById('studentNameInput').classList.remove('border-rose-500');
+        }
+
+        /* ==========================================================================
+           GAME FLOW CONTROL
+           ========================================================================== */
+        function startGame(mode) {
+            const nameInput = document.getElementById('studentNameInput');
+            const trimmedName = nameInput.value.trim();
+
+            if (!trimmedName) {
+                playSound('wrong');
+                document.getElementById('nameErrorMsg').classList.remove('hidden');
+                nameInput.classList.add('border-rose-500');
+                nameInput.focus();
+                return;
+            }
+
+            playSound('click');
+            studentName = trimmedName;
+            studentClass = document.getElementById('studentClassInput').value.trim() || 'Kelas 3 SDIT Al-Fikri';
+            feedbackMode = document.getElementById('feedbackModeSelect').value;
+            selectedMode = mode;
+
+            // Filter questions by mode
+            if (mode === 'ALL') {
+                activeQuestions = [...QUESTION_BANK];
+            } else {
+                activeQuestions = QUESTION_BANK.filter(q => q.group === mode);
+            }
+
+            currentQuestionIdx = 0;
+            userAnswers = {};
+
+            // Update UI Header
+            document.getElementById('activeStudentName').textContent = studentName;
+            document.getElementById('totalQCount').textContent = activeQuestions.length;
+            document.getElementById('homeNavBtn').classList.remove('hidden');
+
+            // Switch Screen
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+
+            renderQuestion();
+            renderQuestionGrid();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderQuestion() {
+            const q = activeQuestions[currentQuestionIdx];
+            const total = activeQuestions.length;
+
+            // Update Counters & Progress
+            document.getElementById('currentQIndex').textContent = currentQuestionIdx + 1;
+            const answeredCount = Object.keys(userAnswers).length;
+            document.getElementById('answeredCountDisplay').textContent = `${answeredCount}/${total}`;
+
+            const progressPercent = Math.round(((currentQuestionIdx + 1) / total) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+            // Category & Source Badges
+            document.getElementById('qCategoryBadge').textContent = q.categoryName;
+            document.getElementById('qSourceBadge').innerHTML = `<i class="fa-solid fa-book mr-1"></i> ${q.source}`;
+
+            // Visual Illustration Box
+            const visualBox = document.getElementById('qVisualBox');
+            if (q.visual) {
+                visualBox.classList.remove('hidden');
+                document.getElementById('qVisualEmoji').textContent = q.visual.emoji;
+                document.getElementById('qVisualCaption').textContent = q.visual.caption;
+            } else {
+                visualBox.classList.add('hidden');
+            }
+
+            // Story Box
+            const storyBox = document.getElementById('qStoryBox');
+            if (q.story) {
+                storyBox.classList.remove('hidden');
+                storyBox.innerHTML = q.story.replace(/\n/g, '<br>');
+            } else {
+                storyBox.classList.add('hidden');
+            }
+
+            // Question Text
+            document.getElementById('qText').textContent = `${currentQuestionIdx + 1}. ${q.question}`;
+
+            // Render Options
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            const hasAnswered = userAnswers.hasOwnProperty(currentQuestionIdx);
+            const selectedIdx = userAnswers[currentQuestionIdx];
+
+            q.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+
+                let stateClasses = 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50';
+                let badgeHtml = '';
+
+                if (hasAnswered) {
+                    if (feedbackMode === 'instant') {
+                        if (idx === q.correctIndex) {
+                            stateClasses = 'option-correct text-emerald-950 font-extrabold';
+                            badgeHtml = `<span class="ml-auto px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-600 text-white shrink-0"><i class="fa-solid fa-check mr-1"></i>Benar</span>`;
+                        } else if (idx === selectedIdx && selectedIdx !== q.correctIndex) {
+                            stateClasses = 'option-wrong text-rose-950 font-bold';
+                            badgeHtml = `<span class="ml-auto px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-rose-600 text-white shrink-0"><i class="fa-solid fa-xmark mr-1"></i>Pilihanmu</span>`;
+                        } else {
+                            stateClasses = 'bg-slate-50 border-slate-200 text-slate-400 opacity-75';
+                        }
+                    } else {
+                        // End mode: highlight selected option only
+                        if (idx === selectedIdx) {
+                            stateClasses = 'option-selected text-sky-950 font-extrabold';
+                            badgeHtml = `<span class="ml-auto px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-sky-600 text-white shrink-0">Dipilih</span>`;
+                        }
+                    }
+                }
+
+                btn.className = `option-btn w-full text-left p-4 rounded-2xl border-2 font-semibold text-sm sm:text-base flex items-center gap-3 ${stateClasses}`;
+                btn.innerHTML = `
+                    <span class="flex-1 leading-snug">${optText}</span>
+                    ${badgeHtml}
+                `;
+
+                // Allow changing answer in 'end' mode, or selecting once in 'instant' mode
+                if (!hasAnswered || feedbackMode === 'end') {
+                    btn.onclick = () => selectAnswer(idx);
+                } else {
+                    btn.disabled = true;
+                }
+
+                optionsContainer.appendChild(btn);
+            });
+
+            // Instant Feedback Box
+            const feedbackBox = document.getElementById('instantFeedbackBox');
+            if (hasAnswered && feedbackMode === 'instant') {
+                const isCorrect = selectedIdx === q.correctIndex;
+                feedbackBox.classList.remove('hidden');
+                if (isCorrect) {
+                    feedbackBox.className = 'rounded-2xl p-4 border-2 bg-emerald-50 border-emerald-300 text-emerald-950';
+                    document.getElementById('instantFeedbackIcon').textContent = '🌟';
+                    document.getElementById('instantFeedbackTitle').textContent = 'MasyaAllah, Jawabanmu Tepat!';
+                    document.getElementById('instantFeedbackTitle').className = 'font-extrabold text-base text-emerald-800';
+                } else {
+                    feedbackBox.className = 'rounded-2xl p-4 border-2 bg-amber-50 border-amber-300 text-amber-950';
+                    document.getElementById('instantFeedbackIcon').textContent = '💡';
+                    document.getElementById('instantFeedbackTitle').textContent = 'Belum Tepat, Yuk Simak Pembahasannya!';
+                    document.getElementById('instantFeedbackTitle').className = 'font-extrabold text-base text-rose-700';
+                }
+                document.getElementById('instantFeedbackCorrectAns').textContent = `Kunci Jawaban: ${q.options[q.correctIndex]}`;
+                document.getElementById('instantFeedbackExp').textContent = q.explanation;
+            } else {
+                feedbackBox.classList.add('hidden');
+            }
+
+            // Prev / Next / Finish buttons
+            document.getElementById('prevBtn').disabled = currentQuestionIdx === 0;
+            if (currentQuestionIdx === total - 1) {
+                document.getElementById('nextBtn').classList.add('hidden');
+                document.getElementById('finishBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('nextBtn').classList.remove('hidden');
+                document.getElementById('finishBtn').classList.add('hidden');
+            }
+
+            updateQuestionGridHighlight();
+        }
+
+        function selectAnswer(optionIdx) {
+            const q = activeQuestions[currentQuestionIdx];
+            userAnswers[currentQuestionIdx] = optionIdx;
+
+            if (feedbackMode === 'instant') {
+                if (optionIdx === q.correctIndex) {
+                    playSound('correct');
+                } else {
+                    playSound('wrong');
+                }
+            } else {
+                playSound('click');
+            }
+
+            renderQuestion();
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIdx > 0) {
+                playSound('click');
+                currentQuestionIdx--;
+                renderQuestion();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIdx < activeQuestions.length - 1) {
+                playSound('click');
+                currentQuestionIdx++;
+                renderQuestion();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function renderQuestionGrid() {
+            const grid = document.getElementById('questionGridNav');
+            grid.innerHTML = '';
+            activeQuestions.forEach((_, idx) => {
+                const btn = document.createElement('button');
+                btn.id = `qNavBtn_${idx}`;
+                btn.type = 'button';
+                btn.textContent = idx + 1;
+                btn.onclick = () => {
+                    playSound('click');
+                    currentQuestionIdx = idx;
+                    renderQuestion();
+                };
+                grid.appendChild(btn);
+            });
+            updateQuestionGridHighlight();
+        }
+
+        function updateQuestionGridHighlight() {
+            activeQuestions.forEach((q, idx) => {
+                const btn = document.getElementById(`qNavBtn_${idx}`);
+                if (!btn) return;
+
+                const isCurrent = idx === currentQuestionIdx;
+                const isAnswered = userAnswers.hasOwnProperty(idx);
+
+                let base = 'w-9 h-9 rounded-xl font-extrabold text-xs transition flex items-center justify-center border-2 ';
+                if (isCurrent) {
+                    base += 'ring-2 ring-offset-1 ring-sky-500 border-sky-600 bg-sky-600 text-white';
+                } else if (isAnswered) {
+                    if (feedbackMode === 'instant') {
+                        const isCorrect = userAnswers[idx] === q.correctIndex;
+                        base += isCorrect
+                            ? 'bg-emerald-100 border-emerald-400 text-emerald-800'
+                            : 'bg-rose-100 border-rose-400 text-rose-800';
+                    } else {
+                        base += 'bg-sky-100 border-sky-300 text-sky-800';
+                    }
+                } else {
+                    base += 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200';
+                }
+                btn.className = base;
+            });
+        }
+
+        /* ==========================================================================
+           FINISH QUIZ, EVALUATION & CERTIFICATE GENERATION
+           ========================================================================== */
+        function finishQuiz() {
+            const total = activeQuestions.length;
+            const answered = Object.keys(userAnswers).length;
+
+            if (answered < total) {
+                const unansweredCount = total - answered;
+                showModal(
+                    'Masih Ada Soal Belum Dijawab',
+                    `Kamu baru menjawab ${answered} dari ${total} soal (masih ada ${unansweredCount} soal kosong). Yakin ingin menyelesaikan sekarang dan melihat nilai?`,
+                    () => processQuizResults()
+                );
+            } else {
+                processQuizResults();
+            }
+        }
+
+        function processQuizResults() {
+            closeModal();
+            playSound('fanfare');
+
+            const total = activeQuestions.length;
+            let correctCount = 0;
+
+            activeQuestions.forEach((q, idx) => {
+                if (userAnswers[idx] === q.correctIndex) {
+                    correctCount++;
+                }
+            });
+
+            const wrongCount = total - correctCount;
+            const finalScore = Math.round((correctCount / total) * 100);
+
+            // Determine Predicate
+            let predicate = 'Sangat Baik (Mumtaz)';
+            let medalEmoji = '🏆';
+            let badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+
+            if (finalScore >= 90) {
+                predicate = 'Sangat Baik / Mumtaz (A)';
+                medalEmoji = '🏆';
+            } else if (finalScore >= 75) {
+                predicate = 'Baik / Jayyid Jiddan (B)';
+                medalEmoji = '🥇';
+            } else if (finalScore >= 60) {
+                predicate = 'Cukup Baik / Jayyid (C)';
+                medalEmoji = '🥈';
+                badgeColor = 'bg-amber-100 text-amber-800 border-amber-300';
+            } else {
+                predicate = 'Perlu Bimbingan Lagi (D)';
+                medalEmoji = '💪';
+                badgeColor = 'bg-rose-100 text-rose-800 border-rose-300';
+            }
+
+            // Populate Result UI
+            document.getElementById('resultMedalEmoji').textContent = medalEmoji;
+            const predBadge = document.getElementById('resultPredicateBadge');
+            predBadge.textContent = `Predikat: ${predicate}`;
+            predBadge.className = `inline-block px-4 py-1 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider border mb-2 ${badgeColor}`;
+
+            document.getElementById('resultStudentName').textContent = studentName;
+            document.getElementById('resultStudentClass').textContent = studentClass;
+            document.getElementById('finalScoreValue').textContent = finalScore;
+            document.getElementById('finalCorrectCount').textContent = correctCount;
+            document.getElementById('finalWrongCount').textContent = wrongCount;
+
+            // Switch Screens
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+
+            // Launch Confetti
+            try {
+                confetti({
+                    particleCount: 110,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            } catch (e) {}
+
+            // Draw High-Resolution Certificate on Canvas
+            drawCertificateCanvas(studentName, studentClass, finalScore, correctCount, total, predicate);
+
+            // Render Detailed Review List
+            filterReview('ALL');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function filterReview(filterType) {
+            currentReviewFilter = filterType;
+            const allBtn = document.getElementById('filterAllBtn');
+            const wrongBtn = document.getElementById('filterWrongBtn');
+            const correctBtn = document.getElementById('filterCorrectBtn');
+
+            allBtn.className = filterType === 'ALL'
+                ? 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-white'
+                : 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-600 hover:bg-slate-200';
+            wrongBtn.className = filterType === 'WRONG'
+                ? 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-rose-600 text-white'
+                : 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-rose-100 text-rose-700 hover:bg-rose-200';
+            correctBtn.className = filterType === 'CORRECT'
+                ? 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-600 text-white'
+                : 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-700 hover:bg-emerald-200';
+
+            const container = document.getElementById('reviewListContainer');
+            container.innerHTML = '';
+
+            let shownCount = 0;
+
+            activeQuestions.forEach((q, idx) => {
+                const userAnsIdx = userAnswers[idx];
+                const isCorrect = userAnsIdx === q.correctIndex;
+
+                if (filterType === 'WRONG' && isCorrect) return;
+                if (filterType === 'CORRECT' && !isCorrect) return;
+
+                shownCount++;
+                const userAnsText = userAnsIdx !== undefined ? q.options[userAnsIdx] : 'Tidak dijawab (Kosong)';
+                const correctAnsText = q.options[q.correctIndex];
+
+                const card = document.createElement('div');
+                card.className = `rounded-2xl p-4 sm:p-5 border-2 ${isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'}`;
+                card.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <span class="text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-md bg-white border text-slate-600">
+                            Soal No. ${idx + 1} • ${q.source}
+                        </span>
+                        <span class="text-xs font-extrabold px-3 py-1 rounded-full ${isCorrect ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}">
+                            ${isCorrect ? '<i class="fa-solid fa-check mr-1"></i>Benar' : '<i class="fa-solid fa-xmark mr-1"></i>Kurang Tepat'}
+                        </span>
+                    </div>
+                    <p class="font-bold text-slate-800 text-sm sm:text-base mb-3">${q.question}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm mb-3">
+                        <div class="p-3 rounded-xl border ${isCorrect ? 'bg-emerald-100/70 border-emerald-300 text-emerald-950' : 'bg-rose-100/70 border-rose-300 text-rose-950'}">
+                            <div class="font-extrabold uppercase text-[11px] opacity-75 mb-0.5">Jawaban Siswa:</div>
+                            <div class="font-bold">${userAnsText}</div>
+                        </div>
+                        <div class="p-3 rounded-xl border bg-emerald-100/80 border-emerald-400 text-emerald-950">
+                            <div class="font-extrabold uppercase text-[11px] text-emerald-800 mb-0.5"><i class="fa-solid fa-key mr-1"></i>Kunci Jawaban Benar:</div>
+                            <div class="font-extrabold">${correctAnsText}</div>
+                        </div>
+                    </div>
+                    <div class="bg-white/90 rounded-xl p-3 border border-slate-200 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                        <strong class="text-emerald-700"><i class="fa-solid fa-lightbulb mr-1"></i>Pembahasan:</strong> ${q.explanation}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (shownCount === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 font-bold">
+                        Tidak ada soal pada kategori filter ini. 🌟
+                    </div>
+                `;
+            }
+        }
+
+        /* ==========================================================================
+           CANVAS & PDF CERTIFICATE GENERATOR (SERTIFIKAT SDIT AL-FIKRI)
+           ========================================================================== */
+        function drawCertificateCanvas(name, className, score, correct, total, predicate) {
+            const canvas = document.getElementById('certificateCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;  // 1200
+            const H = canvas.height; // 848
+
+            // 1. Background Ivory/Cream Gradient
+            const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+            bgGrad.addColorStop(0, '#fffbeb');
+            bgGrad.addColorStop(0.5, '#ffffff');
+            bgGrad.addColorStop(1, '#ecfdf5');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // 2. Decorative Corner Geometric Accents
+            ctx.fillStyle = '#059669'; // Emerald 600
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(220, 0);
+            ctx.lineTo(0, 220);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(W, H);
+            ctx.lineTo(W - 220, H);
+            ctx.lineTo(W, H - 220);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#f59e0b'; // Amber 500
+            ctx.beginPath();
+            ctx.moveTo(W, 0);
+            ctx.lineTo(W - 180, 0);
+            ctx.lineTo(W, 180);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(0, H);
+            ctx.lineTo(180, H);
+            ctx.lineTo(0, H - 180);
+            ctx.closePath();
+            ctx.fill();
+
+            // 3. Outer & Inner Gold/Emerald Borders
+            ctx.strokeStyle = '#047857';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(36, 36, W - 72, H - 72);
+
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(50, 50, W - 100, H - 100);
+
+            // 4. School Header
+            ctx.fillStyle = '#065f46';
+            ctx.font = 'bold 28px Nunito, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('SEKOLAH DASAR ISLAM TERPADU (SDIT) AL-FIKRI', W / 2, 125);
+
+            // 5. Main Title
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 54px Fredoka, sans-serif';
+            ctx.fillText('SERTIFIKAT PENGHARGAAN', W / 2, 195);
+
+            // Decorative Divider Line
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(W / 2 - 200, 218);
+            ctx.lineTo(W / 2 + 200, 218);
+            ctx.stroke();
+
+            // 6. Subtitle
+            ctx.fillStyle = '#475569';
+            ctx.font = 'bold 22px Nunito, sans-serif';
+            ctx.fillText('Diberikan dengan bangga kepada Ananda:', W / 2, 270);
+
+            // 7. Student Name Box & Name
+            ctx.fillStyle = '#f0fdf4';
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.fillRect(W / 2 - 420, 295, 840, 88);
+            ctx.strokeRect(W / 2 - 420, 295, 840, 88);
+
+            ctx.fillStyle = '#047857';
+            ctx.font = 'bold 46px Fredoka, sans-serif';
+            ctx.fillText(name.toUpperCase(), W / 2, 355);
+
+            // 8. Class & Achievement Description
+            ctx.fillStyle = '#334155';
+            ctx.font = 'bold 24px Nunito, sans-serif';
+            ctx.fillText(className, W / 2, 422);
+
+            let modeTitle = 'Semua Materi IPAS Semester Ganjil (Bab 3, Bab 4, HOTS & Akhir Semester)';
+            if (selectedMode === 'BAB3') modeTitle = 'Materi Bab 3: Perkembangan Manusia & Kehidupan Bermasyarakat';
+            if (selectedMode === 'BAB4') modeTitle = 'Materi Bab 4: Siklus Hidup Makhluk Hidup & Perubahan Alam';
+            if (selectedMode === 'SEMESTER') modeTitle = 'Latihan Soal Akhir Semester Ganjil IPAS Kelas 3';
+
+            ctx.font = '22px Nunito, sans-serif';
+            ctx.fillStyle = '#475569';
+            ctx.fillText('Telah menyelesaikan Latihan Ulangan & Kuis Interaktif IPAS Kelas 3 SD', W / 2, 468);
+            ctx.font = 'bold 21px Nunito, sans-serif';
+            ctx.fillStyle = '#0f766e';
+            ctx.fillText(`(${modeTitle} - Sumber: Buku Paket Erlangga Sprint)`, W / 2, 500);
+
+            // 9. Score Badge Box
+            ctx.fillStyle = '#fef3c7';
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 3;
+            ctx.fillRect(W / 2 - 310, 530, 620, 110);
+            ctx.strokeRect(W / 2 - 310, 530, 620, 110);
+
+            ctx.fillStyle = '#b45309';
+            ctx.font = 'bold 36px Fredoka, sans-serif';
+            ctx.fillText(`NILAI AKHIR: ${score} / 100`, W / 2, 578);
+
+            ctx.fillStyle = '#78350f';
+            ctx.font = 'bold 22px Nunito, sans-serif';
+            ctx.fillText(`Benar: ${correct} dari ${total} Soal  •  Predikat: ${predicate}`, W / 2, 618);
+
+            // 10. Date & Signature Footer
+            const todayStr = new Date().toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            ctx.fillStyle = '#334155';
+            ctx.font = 'bold 20px Nunito, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Tanggal Penyelesaian:`, 130, 710);
+            ctx.font = '20px Nunito, sans-serif';
+            ctx.fillText(todayStr, 130, 740);
+
+            // Gold Seal Circle in Center Bottom
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(W / 2, 725, 48, 0, Math.PI * 2);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#fef08a';
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 16px Fredoka, sans-serif';
+            ctx.fillText('LULUS', W / 2, 720);
+            ctx.font = 'bold 14px Nunito, sans-serif';
+            ctx.fillText('IPAS KELAS 3', W / 2, 740);
+            ctx.restore();
+
+            // Right Signature
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#334155';
+            ctx.font = 'bold 20px Nunito, sans-serif';
+            ctx.fillText('Guru IPAS Kelas 3', W - 130, 700);
+            ctx.font = 'bold 22px Fredoka, sans-serif';
+            ctx.fillStyle = '#047857';
+            ctx.fillText('SDIT Al-Fikri', W - 130, 755);
+        }
+
+        function downloadCertificatePDF() {
+            playSound('click');
+            try {
+                const canvas = document.getElementById('certificateCanvas');
+                const imgData = canvas.toDataURL('image/png', 1.0);
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();   // 297mm
+                const pdfHeight = pdf.internal.pageSize.getHeight(); // 210mm
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+                const safeFileName = studentName.replace(/[^a-zA-Z0-9]/g, '_');
+                pdf.save(`Sertifikat_IPAS_Kelas3_SDIT_AlFikri_${safeFileName}.pdf`);
+            } catch (err) {
+                showModal(
+                    'Unduh Gambar Sertifikat',
+                    'Browser Anda membatasi pembuatan PDF langsung. Sertifikat akan diunduh sebagai gambar beresolusi tinggi.',
+                    () => {
+                        closeModal();
+                        const canvas = document.getElementById('certificateCanvas');
+                        const link = document.createElement('a');
+                        link.download = `Sertifikat_IPAS_SDIT_AlFikri_${studentName}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }
+                );
+            }
+        }
+
+        /* ==========================================================================
+           MODAL & NAVIGATION HELPERS
+           ========================================================================== */
+        function showModal(title, message, onConfirm) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            confirmBtn.onclick = onConfirm;
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+
+        function confirmReturnHome() {
+            playSound('click');
+            showModal(
+                'Kembali ke Menu Utama?',
+                'Jika kembali ke menu utama sekarang, progres jawaban saat ini akan di-reset. Yakin ingin kembali?',
+                () => {
+                    closeModal();
+                    returnToHome();
+                }
+            );
+        }
+
+        function returnToHome() {
+            playSound('click');
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('homeNavBtn').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
